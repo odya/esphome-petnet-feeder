@@ -1,0 +1,61 @@
+time:
+  - platform: homeassistant
+    id: time_platform
+    on_time:
+      - seconds: /10
+        then:
+          - output.turn_on: hopper_sensor_emitter
+          - delay: 2s
+          - lambda: |-
+              id(hopper_sensor_detector).update();
+              //ESP_LOGI("hopper_sensor_detector", "%.2f", id(hopper_sensor_detector).state);
+              if (id(hopper_sensor_detector).state < 2.9) {
+                id(hopper_empty).publish_state(true);
+              } else {
+                id(hopper_empty).publish_state(false);
+              }
+          - output.turn_off: hopper_sensor_emitter
+
+sensor:
+  - platform: ads1115
+    multiplexer: 'A0_GND'
+    gain: 4.096
+    id: hopper_sensor_detector
+    name: "ADS1115 A0-GND"
+    update_interval: 60s
+    accuracy_decimals: 2
+    internal: true
+#    filters:
+#      - median:
+#          window_size: 2
+#          send_every: 2
+#          send_first_at: 2
+
+binary_sensor:
+  - platform: template
+    name: "Hopper Empty"
+    id: hopper_empty
+    filters:
+      - delayed_on_off: 5sec
+    on_press:
+      then:
+      - lambda: |-
+          ESP_LOGI("hopperEmpty", "true");
+      - script.execute: led_blink_red
+      - script.execute:
+          id: notify
+          title: "⚠️ ${node_name}"
+          message: "Meow! We are running out of treats!"
+    on_release:
+      then:
+      - lambda: |-
+          ESP_LOGI("hopperEmpty", "false");
+      - script.stop: led_blink_red
+
+output:
+  - platform: gpio
+    id: hopper_sensor_emitter
+    pin:
+      number: D3
+      # mode: INPUT_PULLUP
+      inverted: true

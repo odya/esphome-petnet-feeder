@@ -1,0 +1,103 @@
+sensor:
+  - platform: adc
+    pin: A0
+    id: usb_power_detector
+    update_interval: 10s
+    internal: true
+    filters:
+      - multiply: 2
+      - multiply: 3.3
+      - delta: 0.5
+    on_value:
+      then:
+      - lambda: |-
+          if (id(usb_power_detector).state > 0.5) {
+            id(usb_power).publish_state(true);
+          } else {
+            id(usb_power).publish_state(false);
+          }
+
+### (In case you want to measure usb power on A2 input of ads1115)
+#  - platform: ads1115
+#    multiplexer: 'A2_GND'
+#    gain: 6.144
+#    id: usb_power_detector
+#    name: "ADS1115 A2-GND"
+#    update_interval: 10s
+#    accuracy_decimals: 1
+#    internal: true
+##    filters:
+##      - delta: 0.5
+#    on_value:
+#      then:
+#      - lambda: |-
+#          if (id(usb_power_detector).state > 0.5) {
+#            id(usb_power).publish_state(true);
+#          } else {
+#            id(usb_power).publish_state(false);
+#          }
+
+  - platform: ads1115
+    id: battery_voltage
+    multiplexer: 'A3_GND'
+    gain: 4.096
+    update_interval: 60s
+    accuracy_decimals: 2
+    name: "Battery Voltage"
+    filters:
+    - multiply: 2
+    - sliding_window_moving_average:
+        window_size: 6
+        send_every: 6
+        send_first_at: 1
+
+  - platform: template
+    name: "Battery Percent"
+    unit_of_measurement: "%"
+    icon: "mdi:battery-50"
+    lambda: |-
+      return id(battery_voltage).state;
+    update_interval: 60s
+    accuracy_decimals: 0
+    filters:
+    - calibrate_linear:
+      - 2.7 -> 0
+      - 4.0 -> 100
+    - lambda: if (x > 100) {return 100;} else {return x;}
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return x < 20;
+            then:
+              - lambda: id(battery_critical).publish_state(true);
+            else:
+              - lambda: id(battery_critical).publish_state(false);
+
+binary_sensor:
+  - platform: template
+    name: "USB Power"
+    id: usb_power
+    on_press:
+      then:
+      - lambda: |-
+          ESP_LOGI("usbPower", "true");
+      - script.stop: led_pulse_white
+    on_release:
+      then:
+      - lambda: |-
+          ESP_LOGI("usbPower", "false");
+      - script.execute: led_pulse_white
+
+  - platform: template
+    name: "Battery Critical"
+    id: battery_critical
+    internal: true
+    filters:
+      - delayed_on_off: 5s
+    on_press:
+      then:
+        - script.execute:
+            id: notify
+            title: "⛔️ ${node_name}"
+            message: "Battery critical!"

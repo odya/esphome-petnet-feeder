@@ -1,0 +1,129 @@
+globals:
+#  - id: sections_to_scroll
+#    type: int
+#    restore_value: no
+#    initial_value: '0'
+  - id: sections_counter
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+script:
+  - id: do_feed
+    parameters:
+      sections_to_scroll: int
+    then:
+      - output.turn_off: motor_stby
+      - globals.set:
+          id: sections_counter
+          value: '0'
+      - lambda: !lambda |-
+          if(id(usb_power).state) {
+            id(motor_pwm).set_level(0.8);
+          } else {
+            id(motor_pwm).set_level(0.5);
+          }
+      - lambda: !lambda |-
+          id(sections_sensor_detector).set_update_interval(50);
+          id(sections_sensor_detector).call_setup();
+      - delay: 500ms
+      - switch.turn_on: motor2
+      - switch.turn_off: motor1
+#      - delay: 3s #test
+      - script.execute: check_sections_counter
+      - wait_until:
+          lambda: |-
+            return id(sections_counter) > sections_to_scroll;
+      - delay: 50ms
+      - switch.turn_on: motor1
+      - delay: 700ms
+      - script.execute: motors_off
+      - if:
+          condition:
+            and:
+              - lambda: 'return id(sections_counter) > 0;'
+          then:
+            - script.execute:
+                id: notify
+                title: "ℹ️ ${node_name}"
+                message: !lambda return "Feeded with " + std::to_string(id(sections_counter) - 1) + " portions.";
+
+  - id: motors_off
+    then:
+      - output.set_level:
+          id: motor_pwm
+          level: 0%
+      - switch.turn_off: motor1
+      - switch.turn_off: motor2
+      - output.turn_on: motor_stby
+      - lambda: !lambda |-
+          id(sections_sensor_detector).set_update_interval(5000);
+          id(sections_sensor_detector).call_setup();
+
+  - id: check_sections_counter
+    mode: restart
+    then:
+      - delay: 5 sec
+      - if:
+          condition:
+            and:
+              - script.is_running: do_feed
+              - lambda: 'return id(sections_counter) == 0;'
+          then:
+            - script.execute: motors_off
+            - script.stop: do_feed
+            - script.execute:
+                id: notify
+                title: "⛔️ ${node_name}"
+                message: "Feeder motor seems to be stuck!"
+
+sensor:
+  - platform: ads1115
+    multiplexer: 'A1_GND'
+    gain: 4.096
+    id: sections_sensor_detector
+    name: "ADS1115 A1-GND"
+    update_interval: 5000ms
+    accuracy_decimals: 2
+    internal: true
+    filters:
+      - lambda: if (x > 0) {return 1;} else {return 0;}
+      - delta: 0.5
+    on_value:
+      then:
+      - lambda: |-
+          if (x == 1) {
+            id(sections_counter) += 1;
+            //ESP_LOGI("sectionsSensor", "Sections counter: %d", id(sections_counter));
+          }
+          //ESP_LOGI("sections_detector", "%.2f", x);
+
+output:
+  - platform: gpio
+    id: motor_stby
+    pin: D5
+    inverted: true
+
+  - platform: esp8266_pwm
+    pin: D6
+    frequency: 10 kHz
+    id: motor_pwm
+
+switch:
+  # MOTOR1 | MOTOR2 | RESULT
+  # high   | low    | rotate backward
+  # low    | high   | rotate forward
+  # high   | high   | break
+  - platform: gpio
+    internal: true
+    id: motor1
+    name: "Motor1"
+    pin: D7
+  - platform: gpio
+    internal: true
+    id: motor2
+    name: "Motor2"
+    pin: D8
+
+
+

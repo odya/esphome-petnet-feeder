@@ -1,0 +1,55 @@
+# Default substitutions
+substitutions:
+  node_name: "PetNet Feeder"
+  node_id: petnet_feeder
+  device_name: "petnet-feeder"
+  ha_notify_service: notify.notify
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${node_name}
+  comment: "Petnet SmartFeeder revival project"
+  project:
+    name: "odya.petnet-feeder"
+    version: 1.0.0
+  on_boot:
+    then:
+      - output.turn_on: motor_stby
+      - light.turn_on:
+          id: light_led_white
+          transition_length: 3s
+      - delay: 3s
+      - light.turn_off: light_led_white
+  
+esp8266:
+  board: d1_mini
+
+packages:
+  power: !include modules/power.yaml
+  feed: !include modules/feed.yaml
+  hopper: !include modules/hopper.yaml
+  indication: !include modules/indication.yaml
+  controls: !include modules/controls.yaml
+
+# --- CUSTOM CONFIG SECTION ---
+  
+i2c:
+  sda: D2
+  scl: D1
+  scan: false
+  id: bus_a
+  
+ads1115:
+  - address: 0x48
+
+script:
+  - id: notify
+    parameters:
+      title: string
+      message: string
+    then:
+      - homeassistant.service:
+          service: ${ha_notify_service}
+          data:
+            title: !lambda return "*" + title + "*";
+            message: !lambda return message;

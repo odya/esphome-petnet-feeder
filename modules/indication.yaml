@@ -1,0 +1,74 @@
+script:
+  - id: led_light_red
+    then:
+      - script.stop: led_pulse_white
+      - output.turn_off: led_white
+      - output.turn_on: led_red
+
+  - id: led_light_white
+    then:
+      - script.stop: led_pulse_white
+      - output.turn_off: led_white
+      - output.turn_on: led_red
+
+  - id: led_blink_red
+    then:
+      - output.turn_off: led_white
+      - while:
+          condition:
+            lambda: 'return true;'
+          then:
+          - light.turn_on:
+                id: light_led_red
+                brightness: 1.0
+                transition_length: 0s
+          - delay: 1s
+          - light.turn_off:
+              id: light_led_red
+              transition_length: 0s
+          - delay: 1s
+
+  - id: led_pulse_white
+    then:
+      - output.turn_off: led_red
+      - while:
+          condition:
+            lambda: 'return true;'
+          then:
+          - light.turn_on:
+                id: light_led_white
+                brightness: 1.0
+                transition_length: 1s
+          - delay: 2s
+          - light.turn_off:
+              id: light_led_white
+              transition_length: 1s
+          - delay: 2s
+
+output:
+  - platform: esp8266_pwm
+    id: led_red
+    pin:
+      number: TX
+      # inverted: true
+
+  - platform: esp8266_pwm
+    id: led_white
+    pin:
+      number: D0
+      # inverted: true
+
+light:
+  - platform: monochromatic
+    id: light_led_white
+    name: "Led White"
+    output: led_white
+    restore_mode: ALWAYS_OFF
+    internal: true
+
+  - platform: monochromatic
+    id: light_led_red
+    name: "Led Red"
+    output: led_red
+    restore_mode: ALWAYS_OFF
+    internal: true

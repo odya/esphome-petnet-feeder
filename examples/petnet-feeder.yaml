@@ -1,0 +1,40 @@
+substitutions:
+  node_name: "PetNet Feeder"
+  node_id: petnet_feeder
+  device_name: "petnet-feeder"
+  ha_notify_service: notify.notify # Low food level, low battery & feed notifications
+
+packages:
+  main: !include petnet-feeder/main.yaml
+  # You can replace next line with your common config for all devices
+  # or just copy it contents here
+  common_system: !include petnet-feeder/examples/common_system.yaml
+
+#web_server:
+#  port: 80
+#  auth:
+#    username: !secret web_server_user
+#    password: !secret web_server_pass
+#  ota: false
+
+logger:
+  level: INFO
+  baud_rate: 0
+  esp8266_store_log_strings_in_flash: false
+
+# status_led:
+#   pin:
+#     number: GPIO13
+#     inverted: true
+
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    entity_category: "diagnostic"
+    device_class: duration
+    update_interval: 60s
+  - platform: wifi_signal
+    name: "RSSI"
+    id: wifi_rssi
+    entity_category: "diagnostic"
+    update_interval: 60s

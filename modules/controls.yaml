@@ -1,0 +1,58 @@
+api:
+  services:
+    - service: do_feed
+      variables:
+        sections: int
+      then:
+        - script.execute:
+            id: do_feed
+            sections_to_scroll: !lambda return sections;
+
+binary_sensor:
+  - platform: gpio
+    name: "Button"
+    pin:
+      number: RX
+      mode: INPUT_PULLUP
+      inverted: true
+    internal: true
+    filters:
+      - delayed_on: 50ms
+    on_multi_click:
+    # double click
+    - timing:
+      - ON for at most 1s
+      - OFF for at most 1s
+      - ON for at most 1s
+      - OFF for at least 0.2s
+      then:
+      - lambda: |-
+          ESP_LOGI("button", "Button double-clicked");
+    # hold button
+    - timing:
+      - ON for 1s to 5s
+      - OFF for at least 0.5s
+      then:
+        - lambda: |-
+            ESP_LOGI("button", "Button holded");
+    # single click
+    - timing:
+      - ON for at most 1s
+      - OFF for at least 0.5s
+      then:
+      - lambda: |-
+          ESP_LOGI("button", "Button clicked");
+          id(btn_feed_1).press();
+
+button:
+  - platform: template
+    name: "Feed One Portion"
+    id: btn_feed_1
+    on_press:
+      - script.execute:
+          id: do_feed
+          sections_to_scroll: 1
+
+  - platform: restart
+    name: "Restart"
+
