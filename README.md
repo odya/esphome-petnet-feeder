@@ -17,6 +17,7 @@ Petnet SmartFeeder 1st Gen Revival Project: Bring your feeder back to life with 
 2) Now, the `main.yaml` file must be located under `<esphome_config>/petnet-feeder`
 3) Create file `petnet-feeder.yaml` in the esphome config directory root and copy contents of [example config](/examples/petnet-feeder.yaml)
 4) Edit & customize `petnet-feeder.yaml`
+5) Flash firmware to Wemos D1 mini
 
 ## Schematic 
 ![Schematic](docs/schematic.svg)
