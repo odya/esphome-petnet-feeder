@@ -10,6 +10,7 @@ Petnet SmartFeeder 1st Gen Revival Project: Bring your feeder back to life with 
 ### Hardware
 1) Create PCB from [Gerber file](docs/Gerber_PCB_PetNet%20Feeder.zip) or order it on JLCPCB via [EasyEDA Project](https://oshwlab.com/ganzevich/petnet-feeder)
 2) Solder all parts listed in [BOM](docs/BOM_PetNet%20SmartFeeder%20Revival.xlsx)
+3) Disconnect the motor and sensors from the original controller, and solder Dupont 2.45 connectors according to the color coding from the schematics. 
 ### Software
 1) Clone the project to a subdirectory in your ESPHome config directory:
 ``git clone https://github.com/odya/esphome-petnet-feeder.git``
@@ -35,5 +36,6 @@ data:
 - [EasyEDA Project](https://oshwlab.com/ganzevich/petnet-feeder)
 - [PCB in Gerber format](docs/Gerber_PCB_PetNet%20Feeder.zip)
 - [BOM](docs/BOM_PetNet%20SmartFeeder%20Revival.xlsx)
+- [Breadboard prototype](docs/prototype/PROTOTYPE.md)
 
 
