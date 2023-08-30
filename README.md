@@ -38,5 +38,5 @@ data:
 - [PCB in Gerber format](docs/Gerber_PCB_PetNet%20Feeder.zip)
 - [BOM](docs/BOM_PetNet%20SmartFeeder%20Revival.xlsx)
 - [Breadboard prototype](docs/prototype/PROTOTYPE.md)
-
+- [Similar project using NodeMCU](https://community.hubitat.com/t/saved-my-petnet-smart-feeder-with-a-nodemcu/54185)
 
